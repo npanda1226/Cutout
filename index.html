@@ -179,7 +179,26 @@ main{flex:1;padding:20px 18px;max-width:640px;margin:0 auto;width:100%}
 .api-status.warn{background:rgba(255,176,32,.08);border:1px solid rgba(255,176,32,.25);color:var(--warn)}
 
 /* 색상 배경 선택 */
-.bg-color-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.bg-color-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+
+/* 배경 처리 모드 토글 */
+.mode-toggle-row{display:flex;gap:8px;margin-bottom:16px}
+.mode-toggle-btn{
+  flex:1;padding:11px 14px;border-radius:var(--rs);border:1px solid var(--border);
+  background:var(--surface);color:var(--text2);font-family:var(--fb);font-size:.8rem;font-weight:600;
+  cursor:pointer;transition:all var(--tr);display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.mode-toggle-btn:hover{border-color:var(--border-h)}
+.mode-toggle-btn.active{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
+.mode-toggle-ico{font-size:.9rem}
+
+/* 커스텀 컬러 피커 */
+.custom-color-row{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.custom-color-row input[type=color]{
+  width:40px;height:40px;border-radius:10px;border:1px solid var(--border);
+  cursor:pointer;background:none;padding:2px;
+}
+.custom-color-label{font-size:.78rem;color:var(--text2)}
 .bg-swatch{width:36px;height:36px;border-radius:9px;cursor:pointer;border:2px solid transparent;
   transition:all var(--tr);position:relative;flex-shrink:0}
 .bg-swatch:hover{transform:scale(1.08)}
@@ -314,8 +333,25 @@ video{display:none}
     <div class="compare-wrap checker" id="imgCompareWrap">
       <img class="compare-img" id="imgResultPreview"/>
     </div>
-    <div class="sect-label">배경 색상</div>
-    <div class="bg-color-row" id="imgBgRow"></div>
+    <div class="sect-label">배경 처리 방식</div>
+    <div class="mode-toggle-row">
+      <button class="mode-toggle-btn active" id="modeEraseBtn" onclick="setBgMode('erase')">
+        <span class="mode-toggle-ico">🗑</span> 완전히 지우기
+      </button>
+      <button class="mode-toggle-btn" id="modeChromaBtn" onclick="setBgMode('chroma')">
+        <span class="mode-toggle-ico">🎨</span> 크로마키 색상
+      </button>
+    </div>
+
+    <div id="chromaColorArea" style="display:none">
+      <div class="sect-label">색상 선택</div>
+      <div class="bg-color-row" id="imgBgRow"></div>
+      <div class="custom-color-row">
+        <input type="color" id="customColorPicker" value="#2ee6a8" oninput="onCustomColorPick(this.value)"/>
+        <span class="custom-color-label">직접 선택</span>
+      </div>
+    </div>
+
     <div class="result-actions">
       <button class="btn-primary" onclick="downloadImgResult()">⬇ PNG로 저장</button>
       <button class="btn-ghost" onclick="saveImgToHistory()">📌 히스토리에 저장</button>
@@ -394,7 +430,8 @@ let segModel = null, modelLoading = false;
 let vidPlaying = false, vidRAF = null;
 let mediaRecorder = null, recChunks = [], isRecording = false;
 
-const BG_SWATCHES = ['transparent', '#ffffff', '#000000', '#2ee6a8', '#ff5e72', '#3b82f6', '#ffb020'];
+const BG_SWATCHES = ['#ffffff', '#000000', '#2ee6a8', '#ff5e72', '#3b82f6', '#ffb020'];
+let bgMode = 'erase'; // 'erase' | 'chroma'
 
 // ══ 스플래시 ══
 window.onload = () => {
@@ -528,19 +565,38 @@ async function removeImageBackground(file) {
 function showImgResult() {
   const box = document.getElementById('imgResultBox');
   box.classList.add('active');
-  applyImgBgColor();
+  setBgMode('erase');
+}
+
+// ══ 배경 처리 모드 (완전삭제 vs 크로마키) ══
+function setBgMode(mode) {
+  bgMode = mode;
+  document.getElementById('modeEraseBtn').classList.toggle('active', mode === 'erase');
+  document.getElementById('modeChromaBtn').classList.toggle('active', mode === 'chroma');
+  document.getElementById('chromaColorArea').style.display = mode === 'chroma' ? 'block' : 'none';
+
+  if (mode === 'erase') {
+    curBgColor = 'transparent';
+  } else if (curBgColor === 'transparent') {
+    curBgColor = BG_SWATCHES[0];
+  }
   renderBgRow();
+  applyImgBgColor();
+}
+
+function onCustomColorPick(hex) {
+  curBgColor = hex;
+  renderBgRow();
+  applyImgBgColor();
 }
 
 // ══ 배경 색상 적용 ══
 function renderBgRow() {
   const row = document.getElementById('imgBgRow');
+  if (!row) return;
   row.innerHTML = BG_SWATCHES.map(c => {
-    const isTransparent = c === 'transparent';
-    const cls = isTransparent ? 'bg-swatch transparent-sw' : 'bg-swatch';
-    const style = isTransparent ? '' : `style="background:${c}"`;
     const active = curBgColor === c ? ' active' : '';
-    return `<div class="${cls}${active}" ${style} onclick="setImgBgColor('${c}')"></div>`;
+    return `<div class="bg-swatch${active}" style="background:${c}" onclick="setImgBgColor('${c}')"></div>`;
   }).join('');
 }
 function setImgBgColor(c) {
@@ -565,7 +621,6 @@ function applyImgBgColor() {
 // ══ 배경색 합성 (다운로드/저장용) ══
 function compositeImgWithBg(callback) {
   const img = new Image();
-  img.crossOrigin = 'anonymous';
   img.onload = () => {
     const c = document.createElement('canvas');
     c.width = img.width; c.height = img.height;
@@ -577,6 +632,7 @@ function compositeImgWithBg(callback) {
     ctx.drawImage(img, 0, 0);
     callback(c.toDataURL('image/png'));
   };
+  img.onerror = () => { showToast('이미지 처리 중 오류가 발생했습니다'); };
   img.src = curImgResultUrl;
 }
 
@@ -610,7 +666,7 @@ function saveImgToHistory() {
 
 // ══ 초기화 ══
 function resetImgTab() {
-  curImgResultUrl = null; curImgOriginalFile = null; curBgColor = 'transparent';
+  curImgResultUrl = null; curImgOriginalFile = null; curBgColor = 'transparent'; bgMode = 'erase';
   document.getElementById('imgResultBox').classList.remove('active');
   document.getElementById('imgFile').value = '';
 }
