@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0"/>
+<title>Cutout.</title>
+<meta name="application-name" content="Cutout."/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-title" content="Cutout."/>
+<meta name="theme-color" content="#0b0e0f"/>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="icon-192.png"/>
+<link rel="icon" type="image/png" href="icon-192.png"/>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+:root{
+  --bg:#0b0e0f; --surface:#141819; --card:#1a2021; --card-h:#1f2627;
+  --border:rgba(255,255,255,.08); --border-h:rgba(255,255,255,.2);
+  --accent:#2ee6a8; --accent-dim:rgba(46,230,168,.12); --accent-glow:rgba(46,230,168,.35);
+  --warn:#ffb020; --danger:#ff5e72;
+  --text:#f2f5f4; --text2:#a9b6b3; --muted:#5c6b68;
+  --r:14px; --rs:9px; --tr:.2s cubic-bezier(.4,0,.2,1);
+  --fd:'Space Grotesk',sans-serif; --fb:'Manrope',sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--fb);background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+
+/* 체커보드(투명 배경) */
+.checker{
+  background-image:
+    linear-gradient(45deg,#20272a 25%,transparent 25%),
+    linear-gradient(-45deg,#20272a 25%,transparent 25%),
+    linear-gradient(45deg,transparent 75%,#20272a 75%),
+    linear-gradient(-45deg,transparent 75%,#20272a 75%);
+  background-size:16px 16px;
+  background-position:0 0,0 8px,8px -8px,-8px 0px;
+  background-color:#161b1c;
+}
+
+/* 스플래시 */
+#splash{position:fixed;inset:0;z-index:9999;background:var(--bg);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;
+  transition:opacity .6s ease,visibility .6s ease;}
+#splash.hide{opacity:0;visibility:hidden}
+.sp-logo{width:64px;height:64px;position:relative;
+  animation:spPop .55s cubic-bezier(.34,1.56,.64,1) both;}
+.sp-corner{position:absolute;width:20px;height:20px}
+.sp-corner::before,.sp-corner::after{content:'';position:absolute;background:var(--accent);border-radius:2px;
+  box-shadow:0 0 12px var(--accent-glow)}
+.sp-corner::before{width:20px;height:3px}
+.sp-corner::after{width:3px;height:20px}
+.sp-corner.tl{top:0;left:0}
+.sp-corner.tr{top:0;right:0}.sp-corner.tr::before{right:0}.sp-corner.tr::after{right:0}
+.sp-corner.bl{bottom:0;left:0}.sp-corner.bl::before{bottom:0}.sp-corner.bl::after{bottom:0}
+.sp-corner.br{bottom:0;right:0}.sp-corner.br::before{bottom:0;right:0}.sp-corner.br::after{bottom:0;right:0}
+.sp-logo-dot{position:absolute;top:50%;left:50%;width:10px;height:10px;border-radius:50%;
+  background:#fff;transform:translate(-50%,-50%);box-shadow:0 0 10px rgba(255,255,255,.6)}
+.sp-title{font-family:var(--fd);font-size:2.6rem;font-weight:700;letter-spacing:-1px;color:#fff;
+  animation:spPop .5s .15s cubic-bezier(.34,1.56,.64,1) both;}
+.sp-title .dot{color:var(--accent)}
+.sp-sub{font-size:.62rem;letter-spacing:4px;text-transform:uppercase;color:var(--muted);
+  animation:spFade .4s .3s ease both;}
+.sp-bar-w{width:150px;height:2px;background:rgba(255,255,255,.08);border-radius:1px;overflow:hidden;animation:spFade .3s .35s ease both}
+.sp-bar{height:100%;width:0;background:var(--accent);animation:spLoad 1.8s .4s ease forwards;box-shadow:0 0 8px var(--accent-glow)}
+@keyframes spPop{from{transform:scale(.5);opacity:0}to{transform:scale(1);opacity:1}}
+@keyframes spFade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spLoad{to{width:100%}}
+
+/* 헤더 */
+header{position:sticky;top:0;z-index:100;height:56px;padding:0 18px;
+  display:flex;align-items:center;justify-content:space-between;
+  background:rgba(11,14,15,.88);backdrop-filter:blur(20px);border-bottom:1px solid var(--border);}
+.logo{display:flex;align-items:center;gap:9px;font-family:var(--fd);font-weight:700;font-size:1.1rem;letter-spacing:-.5px}
+.logo-mark{width:22px;height:22px;position:relative;flex-shrink:0}
+.logo-corner{position:absolute;width:8px;height:8px}
+.logo-corner::before,.logo-corner::after{content:'';position:absolute;background:var(--accent);border-radius:1px}
+.logo-corner::before{width:8px;height:1.6px}
+.logo-corner::after{width:1.6px;height:8px}
+.logo-corner.tl{top:0;left:0}
+.logo-corner.tr{top:0;right:0}.logo-corner.tr::before{right:0}.logo-corner.tr::after{right:0}
+.logo-corner.bl{bottom:0;left:0}.logo-corner.bl::before{bottom:0}.logo-corner.bl::after{bottom:0}
+.logo-corner.br{bottom:0;right:0}.logo-corner.br::before{bottom:0;right:0}.logo-corner.br::after{bottom:0;right:0}
+.logo .dot{color:var(--accent)}
+
+/* 탭바 */
+.tab-bar{display:flex;gap:2px;padding:10px 18px;border-bottom:1px solid var(--border);
+  overflow-x:auto;scrollbar-width:none;background:rgba(11,14,15,.6)}
+.tab-bar::-webkit-scrollbar{display:none}
+.tab-btn{flex-shrink:0;padding:6px 14px;border-radius:8px;border:none;background:transparent;
+  color:var(--muted);font-family:var(--fb);font-size:.78rem;font-weight:600;cursor:pointer;transition:all var(--tr)}
+.tab-btn:hover{color:var(--text2);background:rgba(255,255,255,.04)}
+.tab-btn.active{background:var(--accent);color:#04140f}
+
+main{flex:1;padding:20px 18px;max-width:640px;margin:0 auto;width:100%}
+.panel{display:none}.panel.active{display:block}
+
+.sect-label{font-size:.62rem;text-transform:uppercase;letter-spacing:2px;color:var(--muted);margin-bottom:8px}
+
+/* 홈 화면 — X 로그인 스타일 */
+#homeScreen{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:40px 24px;gap:0;max-width:420px;margin:0 auto;width:100%}
+.home-logo{width:44px;height:44px;position:relative;margin-bottom:36px}
+.home-corner{position:absolute;width:15px;height:15px}
+.home-corner::before,.home-corner::after{content:'';position:absolute;background:var(--accent);border-radius:1.5px}
+.home-corner::before{width:15px;height:2.4px}
+.home-corner::after{width:2.4px;height:15px}
+.home-corner.tl{top:0;left:0}
+.home-corner.tr{top:0;right:0}.home-corner.tr::before{right:0}.home-corner.tr::after{right:0}
+.home-corner.bl{bottom:0;left:0}.home-corner.bl::before{bottom:0}.home-corner.bl::after{bottom:0}
+.home-corner.br{bottom:0;right:0}.home-corner.br::before{bottom:0;right:0}.home-corner.br::after{bottom:0;right:0}
+.home-title{font-family:var(--fd);font-size:2.1rem;font-weight:700;letter-spacing:-1px;
+  text-align:center;line-height:1.3;margin-bottom:40px;max-width:320px}
+.home-title .dot{color:var(--accent)}
+.home-btn-stack{display:flex;flex-direction:column;gap:12px;width:100%;max-width:300px}
+.pill-btn{
+  width:100%;padding:13px 20px;border-radius:999px;border:1px solid var(--border-h);
+  background:transparent;color:var(--text);font-family:var(--fb);font-size:.88rem;font-weight:700;
+  cursor:pointer;transition:all var(--tr);display:flex;align-items:center;justify-content:center;gap:10px;
+}
+.pill-btn:hover{background:rgba(255,255,255,.04)}
+.pill-btn.primary{background:var(--accent);border-color:var(--accent);color:#04140f}
+.pill-btn.primary:hover{background:#26cf94}
+.pill-ico{font-size:1rem}
+.home-divider{display:flex;align-items:center;gap:12px;width:100%;max-width:300px;margin:18px 0}
+.home-divider::before,.home-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+.home-divider span{font-size:.7rem;color:var(--muted)}
+.home-footer-row{display:flex;gap:18px;margin-top:34px}
+.home-footer-link{background:none;border:none;color:var(--text2);font-family:var(--fb);
+  font-size:.76rem;cursor:pointer;transition:color var(--tr);text-decoration:underline;
+  text-underline-offset:3px;text-decoration-color:var(--border-h)}
+.home-footer-link:hover{color:var(--text)}
+
+/* 업로드 드롭존 */
+.dropzone{
+  border:2px dashed var(--border);border-radius:var(--r);padding:40px 20px;
+  text-align:center;cursor:pointer;transition:all var(--tr);margin-bottom:16px;
+}
+.dropzone:hover,.dropzone.dragover{border-color:var(--accent);background:var(--accent-dim)}
+.dropzone-ico{font-size:2.2rem;margin-bottom:10px;opacity:.6}
+.dropzone p{font-size:.85rem;color:var(--text2);margin-bottom:4px}
+.dropzone span{font-size:.72rem;color:var(--muted)}
+
+/* 결과 영역 */
+.result-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);
+  padding:18px;margin-bottom:16px;display:none;}
+.result-box.active{display:block}
+.compare-wrap{position:relative;width:100%;border-radius:12px;overflow:hidden;margin-bottom:14px}
+.compare-img{width:100%;display:block}
+.result-actions{display:flex;gap:8px;flex-wrap:wrap}
+
+.btn-primary{padding:11px 22px;border-radius:var(--rs);border:none;background:var(--accent);color:#04140f;
+  font-family:var(--fd);font-size:.85rem;font-weight:700;cursor:pointer;transition:all var(--tr)}
+.btn-primary:hover{opacity:.88;transform:translateY(-1px)}
+.btn-primary:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.btn-ghost{padding:9px 18px;border-radius:var(--rs);border:1px solid var(--border);background:transparent;
+  color:var(--text2);font-family:var(--fb);font-size:.8rem;cursor:pointer;transition:all var(--tr)}
+.btn-ghost:hover{border-color:var(--border-h);color:var(--text)}
+
+/* 프로그레스 */
+.progress-box{display:none;text-align:center;padding:30px 20px}
+.progress-box.active{display:block}
+.progress-ring{width:56px;height:56px;margin:0 auto 14px;border-radius:50%;
+  border:3px solid var(--border);border-top-color:var(--accent);animation:spin 0.9s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.progress-text{font-size:.82rem;color:var(--text2)}
+.progress-bar-wrap{width:100%;max-width:220px;height:4px;background:var(--border);border-radius:2px;
+  overflow:hidden;margin:12px auto 0}
+.progress-bar-fill{height:100%;background:var(--accent);width:0%;transition:width .2s ease}
+
+/* API 키 설정 */
+.field{margin-bottom:12px}
+.field label{display:block;font-size:.68rem;text-transform:uppercase;letter-spacing:1.5px;color:var(--muted);margin-bottom:6px}
+.field input{width:100%;background:var(--card);border:1px solid var(--border);border-radius:var(--rs);
+  color:var(--text);font-family:var(--fb);font-size:.85rem;padding:10px 13px;outline:none;transition:border-color var(--tr)}
+.field input:focus{border-color:var(--border-h)}
+.api-status{display:flex;align-items:center;gap:8px;font-size:.78rem;padding:10px 14px;
+  border-radius:var(--rs);margin-bottom:14px}
+.api-status.ok{background:rgba(46,230,168,.08);border:1px solid rgba(46,230,168,.25);color:var(--accent)}
+.api-status.warn{background:rgba(255,176,32,.08);border:1px solid rgba(255,176,32,.25);color:var(--warn)}
+
+/* 색상 배경 선택 */
+.bg-color-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px}
+.bg-swatch{width:36px;height:36px;border-radius:9px;cursor:pointer;border:2px solid transparent;
+  transition:all var(--tr);position:relative;flex-shrink:0}
+.bg-swatch:hover{transform:scale(1.08)}
+.bg-swatch.active{border-color:var(--accent)}
+.bg-swatch.transparent-sw{background-image:linear-gradient(45deg,#333 25%,transparent 25%),linear-gradient(-45deg,#333 25%,transparent 25%),
+  linear-gradient(45deg,transparent 75%,#333 75%),linear-gradient(-45deg,transparent 75%,#333 75%);
+  background-size:10px 10px;background-position:0 0,0 5px,5px -5px,-5px 0px;background-color:#111}
+
+/* 히스토리 */
+.hist-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(100px,1fr));gap:10px}
+.hist-thumb{aspect-ratio:1;border-radius:var(--rs);overflow:hidden;cursor:pointer;
+  border:1px solid var(--border);transition:all var(--tr);position:relative}
+.hist-thumb:hover{border-color:var(--border-h)}
+.hist-thumb img{width:100%;height:100%;object-fit:cover}
+.hist-thumb-del{position:absolute;top:4px;right:4px;width:20px;height:20px;border-radius:5px;
+  background:rgba(0,0,0,.6);border:none;color:#fff;font-size:.6rem;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity var(--tr)}
+.hist-thumb:hover .hist-thumb-del{opacity:1}
+
+/* 비디오 프리뷰 */
+.video-stage{position:relative;width:100%;border-radius:var(--r);overflow:hidden;margin-bottom:14px;
+  display:none;}
+.video-stage.active{display:block}
+#videoCanvas{width:100%;display:block}
+video{display:none}
+.video-controls{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.rec-badge{display:none;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;
+  background:rgba(255,94,114,.12);border:1px solid rgba(255,94,114,.3);color:var(--danger);
+  font-size:.72rem;font-weight:600;margin-bottom:10px}
+.rec-badge.active{display:inline-flex}
+.rec-dot{width:6px;height:6px;border-radius:50%;background:var(--danger);animation:recBlink 1s ease-in-out infinite}
+@keyframes recBlink{0%,100%{opacity:1}50%{opacity:.3}}
+
+.notice-box{background:rgba(255,176,32,.06);border:1px solid rgba(255,176,32,.2);border-radius:var(--rs);
+  padding:12px 14px;font-size:.76rem;color:var(--text2);line-height:1.6;margin-bottom:16px}
+.notice-box b{color:var(--warn)}
+
+.empty{text-align:center;padding:44px 20px;color:var(--muted)}
+.empty-ico{font-size:2.4rem;opacity:.28;margin-bottom:10px}
+.empty h3{font-family:var(--fd);font-size:.9rem;color:var(--text2);margin-bottom:4px;font-weight:600}
+.empty p{font-size:.76rem;line-height:1.6}
+
+#toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(14px);
+  background:var(--accent);color:#04140f;font-family:var(--fb);font-size:.78rem;font-weight:700;
+  padding:8px 16px;border-radius:20px;opacity:0;transition:all .2s ease;pointer-events:none;
+  white-space:nowrap;box-shadow:0 4px 20px var(--accent-glow)}
+#toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+@media(max-width:480px){header{padding:0 13px}main{padding:14px 13px}}
+</style>
+</head>
+<body>
+
+<div id="splash">
+  <div class="sp-logo">
+    <div class="sp-corner tl"></div><div class="sp-corner tr"></div>
+    <div class="sp-corner bl"></div><div class="sp-corner br"></div>
+    <div class="sp-logo-dot"></div>
+  </div>
+  <div class="sp-title">Cutout<span class="dot">.</span></div>
+  <div class="sp-sub">AI Background Remover</div>
+  <div class="sp-bar-w"><div class="sp-bar"></div></div>
+</div>
+
+<header>
+  <div class="logo" onclick="showHome()" style="cursor:pointer">
+    <div class="logo-mark">
+      <div class="logo-corner tl"></div><div class="logo-corner tr"></div>
+      <div class="logo-corner bl"></div><div class="logo-corner br"></div>
+    </div>
+    Cutout<span class="dot">.</span>
+  </div>
+</header>
+
+<div id="homeScreen">
+  <div class="home-logo">
+    <div class="home-corner tl"></div><div class="home-corner tr"></div>
+    <div class="home-corner bl"></div><div class="home-corner br"></div>
+  </div>
+  <div class="home-title">배경을 지우는<br/>가장 빠른 방법<span class="dot">.</span></div>
+
+  <div class="home-btn-stack">
+    <button class="pill-btn primary" onclick="goMode('image')">
+      <span class="pill-ico">🖼</span> 이미지로 시작하기
+    </button>
+    <button class="pill-btn" onclick="goMode('video')">
+      <span class="pill-ico">🎬</span> 비디오로 시작하기
+    </button>
+  </div>
+
+  <div class="home-divider"><span>또는</span></div>
+
+  <div class="home-btn-stack">
+    <button class="pill-btn" onclick="switchTab('hist')">
+      <span class="pill-ico">🕐</span> 저장된 히스토리 보기
+    </button>
+  </div>
+
+  <div class="home-footer-row">
+    <button class="home-footer-link" onclick="switchTab('settings')">API 키 설정</button>
+  </div>
+</div>
+
+<div class="tab-bar" id="mainTabBar" style="display:none">
+  <button class="tab-btn" onclick="showHome()" style="color:var(--accent)">🏠 홈</button>
+  <button class="tab-btn" onclick="switchTab('image')" data-t="image">🖼 이미지</button>
+  <button class="tab-btn" onclick="switchTab('video')" data-t="video">🎬 비디오</button>
+  <button class="tab-btn" onclick="switchTab('hist')" data-t="hist">🕐 히스토리</button>
+  <button class="tab-btn" onclick="switchTab('settings')" data-t="settings">⚙ 설정</button>
+</div>
+
+<main style="display:none" id="mainArea">
+
+<!-- ══ 이미지 탭 ══ -->
+<div class="panel" id="tab-image">
+  <div class="api-status" id="imgApiStatus"></div>
+
+  <div class="dropzone" id="imgDropzone" onclick="document.getElementById('imgFile').click()">
+    <div class="dropzone-ico">📤</div>
+    <p>클릭하거나 이미지를 드래그하세요</p>
+    <span>JPG, PNG · 최대 12MB</span>
+  </div>
+  <input type="file" id="imgFile" accept="image/*" style="display:none" onchange="handleImgFile(this.files[0])"/>
+
+  <div class="progress-box" id="imgProgress">
+    <div class="progress-ring"></div>
+    <div class="progress-text">배경을 제거하는 중...</div>
+  </div>
+
+  <div class="result-box" id="imgResultBox">
+    <div class="sect-label">결과</div>
+    <div class="compare-wrap checker" id="imgCompareWrap">
+      <img class="compare-img" id="imgResultPreview"/>
+    </div>
+    <div class="sect-label">배경 색상</div>
+    <div class="bg-color-row" id="imgBgRow"></div>
+    <div class="result-actions">
+      <button class="btn-primary" onclick="downloadImgResult()">⬇ PNG로 저장</button>
+      <button class="btn-ghost" onclick="saveImgToHistory()">📌 히스토리에 저장</button>
+      <button class="btn-ghost" onclick="resetImgTab()">↺ 새 이미지</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══ 비디오 탭 ══ -->
+<div class="panel" id="tab-video">
+  <div class="notice-box">
+    비디오 배경 제거는 <b>브라우저 내 AI 모델</b>로 처리됩니다 (무료·무제한).
+    인물 기준으로 인식하며, 처리 속도는 기기 성능에 따라 달라집니다.
+  </div>
+
+  <div class="dropzone" id="vidDropzone" onclick="document.getElementById('vidFile').click()">
+    <div class="dropzone-ico">🎬</div>
+    <p>클릭하거나 비디오를 드래그하세요</p>
+    <span>MP4, WebM · 최대 100MB 권장</span>
+  </div>
+  <input type="file" id="vidFile" accept="video/*" style="display:none" onchange="handleVidFile(this.files[0])"/>
+
+  <video id="srcVideo" playsinline muted></video>
+
+  <div class="video-stage checker" id="videoStage">
+    <canvas id="videoCanvas"></canvas>
+  </div>
+
+  <div class="rec-badge" id="recBadge"><span class="rec-dot"></span> 녹화 중</div>
+
+  <div class="video-controls" id="videoControls" style="display:none">
+    <button class="btn-primary" id="playBtn" onclick="toggleVideoPlay()">▶ 재생 + 실시간 제거</button>
+    <button class="btn-ghost" id="recBtn" onclick="toggleRecording()">⏺ 녹화 시작</button>
+    <button class="btn-ghost" onclick="resetVidTab()">↺ 새 비디오</button>
+  </div>
+
+  <div class="progress-box" id="vidLoadProgress">
+    <div class="progress-ring"></div>
+    <div class="progress-text" id="vidLoadText">AI 모델을 불러오는 중...</div>
+  </div>
+</div>
+
+<!-- ══ 히스토리 탭 ══ -->
+<div class="panel" id="tab-hist">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+    <div class="sect-label" style="margin-bottom:0">저장된 결과</div>
+    <button class="btn-ghost" id="clearHistBtn" onclick="clearHistory()" style="display:none">전체 삭제</button>
+  </div>
+  <div class="hist-grid" id="histGrid"></div>
+</div>
+
+<!-- ══ 설정 탭 ══ -->
+<div class="panel" id="tab-settings">
+  <div class="sect-label">remove.bg API 키</div>
+  <div class="notice-box">
+    이미지 배경 제거는 <b>remove.bg</b>를 사용합니다. 무료 플랜은 월 50장까지 고품질 처리가 가능합니다.<br/>
+    <a href="https://www.remove.bg/api" target="_blank" style="color:var(--accent)">remove.bg/api</a>에서 무료로 키를 발급받으세요.
+  </div>
+  <div class="field">
+    <label>API Key</label>
+    <input type="password" id="apiKeyInput" placeholder="여기에 API 키 입력..." oninput="onApiKeyInput()"/>
+  </div>
+  <button class="btn-primary" onclick="saveApiKey()">저장</button>
+</div>
+
+</main>
+<div id="toast"></div>
+
+<script>
+// ══ 상태 ══
+let apiKey = localStorage.getItem('cutout_apikey') || '';
+let hist = JSON.parse(localStorage.getItem('cutout_hist') || '[]');
+let curImgResultUrl = null, curImgOriginalFile = null;
+let curBgColor = 'transparent';
+let segModel = null, modelLoading = false;
+let vidPlaying = false, vidRAF = null;
+let mediaRecorder = null, recChunks = [], isRecording = false;
+
+const BG_SWATCHES = ['transparent', '#ffffff', '#000000', '#2ee6a8', '#ff5e72', '#3b82f6', '#ffb020'];
+
+// ══ 스플래시 ══
+window.onload = () => {
+  setTimeout(() => {
+    const s = document.getElementById('splash');
+    if (s) { s.classList.add('hide'); setTimeout(() => s.remove(), 700); }
+  }, 1600);
+  renderApiStatus();
+  renderBgRow();
+  renderHistory();
+  document.getElementById('apiKeyInput').value = apiKey;
+};
+
+// ══ 탭 ══
+function showHome() {
+  document.getElementById('homeScreen').style.display = 'flex';
+  document.getElementById('mainTabBar').style.display = 'none';
+  document.getElementById('mainArea').style.display = 'none';
+  stopVideoPlayback();
+}
+function goMode(id) {
+  document.getElementById('homeScreen').style.display = 'none';
+  document.getElementById('mainTabBar').style.display = 'flex';
+  document.getElementById('mainArea').style.display = 'block';
+  switchTab(id);
+}
+
+function switchTab(id) {
+  document.getElementById('homeScreen').style.display = 'none';
+  document.getElementById('mainTabBar').style.display = 'flex';
+  document.getElementById('mainArea').style.display = 'block';
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('#mainTabBar .tab-btn').forEach(b => b.classList.toggle('active', b.dataset.t === id));
+  document.getElementById('tab-' + id).classList.add('active');
+  if (id === 'hist') renderHistory();
+  if (id !== 'video') stopVideoPlayback();
+}
+
+// ══ API 키 ══
+function onApiKeyInput() {}
+function saveApiKey() {
+  const v = document.getElementById('apiKeyInput').value.trim();
+  apiKey = v;
+  localStorage.setItem('cutout_apikey', v);
+  renderApiStatus();
+  showToast(v ? '✓ API 키 저장됨' : 'API 키가 초기화됨');
+}
+function renderApiStatus() {
+  const el = document.getElementById('imgApiStatus');
+  if (apiKey) {
+    el.className = 'api-status ok';
+    el.innerHTML = '✓ remove.bg API 키가 설정되어 있습니다';
+  } else {
+    el.className = 'api-status warn';
+    el.innerHTML = '⚠ API 키가 없습니다 — <a href="#" onclick="switchTab(\'settings\');return false" style="color:var(--warn);text-decoration:underline">설정에서 등록하기</a>';
+  }
+}
+
+// ══ 유틸 ══
+let toastT = null;
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toastT); toastT = setTimeout(() => t.classList.remove('show'), 1800);
+}
+function escH(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+
+// ══ 드래그앤드롭 ══
+['imgDropzone','vidDropzone'].forEach(id => {
+  const zone = document.getElementById(id);
+  if (!zone) return;
+  zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('dragover'); });
+  zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+  zone.addEventListener('drop', e => {
+    e.preventDefault(); zone.classList.remove('dragover');
+    const f = e.dataTransfer.files[0]; if (!f) return;
+    if (id === 'imgDropzone') handleImgFile(f); else handleVidFile(f);
+  });
+});
+
+// ══ 이미지 업로드 & 처리 ══
+function handleImgFile(file) {
+  if (!file) return;
+  if (!file.type.startsWith('image/')) { showToast('이미지 파일이 아닙니다'); return; }
+  if (file.size > 12 * 1024 * 1024) { showToast('12MB 이하 파일만 가능합니다'); return; }
+  if (!apiKey) {
+    showToast('먼저 설정에서 API 키를 등록해주세요');
+    switchTab('settings');
+    return;
+  }
+  curImgOriginalFile = file;
+  removeImageBackground(file);
+}
+
+async function removeImageBackground(file) {
+  document.getElementById('imgResultBox').classList.remove('active');
+  document.getElementById('imgProgress').classList.add('active');
+
+  try {
+    const formData = new FormData();
+    formData.append('image_file', file);
+    formData.append('size', 'auto');
+
+    const res = await fetch('https://api.remove.bg/v1.0/removebg', {
+      method: 'POST',
+      headers: { 'X-Api-Key': apiKey },
+      body: formData
+    });
+
+    if (!res.ok) {
+      const errText = await res.text().catch(() => '');
+      let msg = '배경 제거 실패';
+      if (res.status === 402) msg = '이번 달 무료 처리 횟수를 모두 사용했습니다';
+      else if (res.status === 403) msg = 'API 키가 올바르지 않습니다';
+      else if (res.status === 400) msg = '이미지를 처리할 수 없습니다';
+      throw new Error(msg);
+    }
+
+    const blob = await res.blob();
+    curImgResultUrl = URL.createObjectURL(blob);
+    curBgColor = 'transparent';
+    showImgResult();
+    showToast('✓ 배경 제거 완료');
+  } catch (e) {
+    showToast(e.message || '오류가 발생했습니다');
+  } finally {
+    document.getElementById('imgProgress').classList.remove('active');
+  }
+}
+
+function showImgResult() {
+  const box = document.getElementById('imgResultBox');
+  box.classList.add('active');
+  applyImgBgColor();
+  renderBgRow();
+}
+
+// ══ 배경 색상 적용 ══
+function renderBgRow() {
+  const row = document.getElementById('imgBgRow');
+  row.innerHTML = BG_SWATCHES.map(c => {
+    const isTransparent = c === 'transparent';
+    const cls = isTransparent ? 'bg-swatch transparent-sw' : 'bg-swatch';
+    const style = isTransparent ? '' : `style="background:${c}"`;
+    const active = curBgColor === c ? ' active' : '';
+    return `<div class="${cls}${active}" ${style} onclick="setImgBgColor('${c}')"></div>`;
+  }).join('');
+}
+function setImgBgColor(c) {
+  curBgColor = c;
+  renderBgRow();
+  applyImgBgColor();
+}
+function applyImgBgColor() {
+  const wrap = document.getElementById('imgCompareWrap');
+  const preview = document.getElementById('imgResultPreview');
+  if (curBgColor === 'transparent') {
+    wrap.classList.add('checker');
+    wrap.style.background = '';
+    preview.src = curImgResultUrl;
+  } else {
+    wrap.classList.remove('checker');
+    wrap.style.background = curBgColor;
+    preview.src = curImgResultUrl;
+  }
+}
+
+// ══ 배경색 합성 (다운로드/저장용) ══
+function compositeImgWithBg(callback) {
+  const img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = () => {
+    const c = document.createElement('canvas');
+    c.width = img.width; c.height = img.height;
+    const ctx = c.getContext('2d');
+    if (curBgColor !== 'transparent') {
+      ctx.fillStyle = curBgColor;
+      ctx.fillRect(0, 0, c.width, c.height);
+    }
+    ctx.drawImage(img, 0, 0);
+    callback(c.toDataURL('image/png'));
+  };
+  img.src = curImgResultUrl;
+}
+
+// ══ 다운로드 ══
+function downloadImgResult() {
+  if (!curImgResultUrl) return;
+  compositeImgWithBg(dataUrl => {
+    const a = document.createElement('a');
+    a.href = dataUrl;
+    a.download = 'cutout-' + Date.now() + '.png';
+    a.click();
+    showToast('✓ 저장됨');
+  });
+}
+
+// ══ 히스토리 저장 ══
+function saveImgToHistory() {
+  if (!curImgResultUrl) return;
+  compositeImgWithBg(dataUrl => {
+    const entry = {
+      id: Date.now(),
+      type: 'image',
+      imgData: dataUrl,
+      date: new Date().toLocaleString('ko-KR')
+    };
+    hist = [entry, ...hist].slice(0, 60);
+    localStorage.setItem('cutout_hist', JSON.stringify(hist));
+    showToast('✓ 히스토리에 저장됨');
+  });
+}
+
+// ══ 초기화 ══
+function resetImgTab() {
+  curImgResultUrl = null; curImgOriginalFile = null; curBgColor = 'transparent';
+  document.getElementById('imgResultBox').classList.remove('active');
+  document.getElementById('imgFile').value = '';
+}
+
+// ══ 비디오 업로드 ══
+function handleVidFile(file) {
+  if (!file) return;
+  if (!file.type.startsWith('video/')) { showToast('비디오 파일이 아닙니다'); return; }
+
+  const video = document.getElementById('srcVideo');
+  video.src = URL.createObjectURL(file);
+  document.getElementById('vidDropzone').style.display = 'none';
+  document.getElementById('videoStage').classList.add('active');
+  document.getElementById('videoControls').style.display = 'flex';
+
+  video.onloadedmetadata = () => {
+    const canvas = document.getElementById('videoCanvas');
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    loadSegModel();
+  };
+}
+
+// ══ AI 모델 로드 (MediaPipe Selfie Segmentation) ══
+async function loadSegModel() {
+  if (segModel || modelLoading) { drawFirstFrame(); return; }
+  modelLoading = true;
+  document.getElementById('vidLoadProgress').classList.add('active');
+  document.getElementById('videoControls').style.display = 'none';
+
+  try {
+    await loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js');
+
+    segModel = new SelfieSegmentation({
+      locateFile: (f) => `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${f}`
+    });
+    segModel.setOptions({ modelSelection: 1 });
+    segModel.onResults(onSegResults);
+    await segModel.initialize();
+
+    modelLoading = false;
+    document.getElementById('vidLoadProgress').classList.remove('active');
+    document.getElementById('videoControls').style.display = 'flex';
+    drawFirstFrame();
+    showToast('✓ AI 모델 준비 완료');
+  } catch (e) {
+    modelLoading = false;
+    document.getElementById('vidLoadProgress').classList.remove('active');
+    document.getElementById('vidLoadText').textContent = 'AI 모델 로드 실패 — 네트워크를 확인해주세요';
+    document.getElementById('vidLoadProgress').classList.add('active');
+    showToast('모델을 불러오지 못했습니다');
+  }
+}
+function loadScript(src) {
+  return new Promise((res, rej) => {
+    if (document.querySelector(`script[src="${src}"]`)) { res(); return; }
+    const s = document.createElement('script');
+    s.src = src; s.crossOrigin = 'anonymous';
+    s.onload = res; s.onerror = rej;
+    document.head.appendChild(s);
+  });
+}
+
+// ══ 세그멘테이션 결과 → 캔버스 합성 ══
+let lastSegResults = null;
+function onSegResults(results) {
+  lastSegResults = results;
+  const canvas = document.getElementById('videoCanvas');
+  const ctx = canvas.getContext('2d');
+  const w = canvas.width, h = canvas.height;
+
+  ctx.save();
+  ctx.clearRect(0, 0, w, h);
+
+  // 마스크로 클리핑
+  ctx.drawImage(results.segmentationMask, 0, 0, w, h);
+  ctx.globalCompositeOperation = 'source-in';
+  ctx.drawImage(results.image, 0, 0, w, h);
+  ctx.globalCompositeOperation = 'source-over';
+  ctx.restore();
+}
+
+function drawFirstFrame() {
+  const video = document.getElementById('srcVideo');
+  if (segModel && video.readyState >= 2) {
+    segModel.send({ image: video });
+  }
+}
+
+// ══ 재생 + 실시간 처리 루프 ══
+function toggleVideoPlay() {
+  const video = document.getElementById('srcVideo');
+  const btn = document.getElementById('playBtn');
+  if (!segModel) { showToast('AI 모델을 불러오는 중입니다'); return; }
+
+  if (vidPlaying) {
+    video.pause();
+    vidPlaying = false;
+    btn.textContent = '▶ 재생 + 실시간 제거';
+    if (vidRAF) cancelAnimationFrame(vidRAF);
+  } else {
+    video.play();
+    vidPlaying = true;
+    btn.textContent = '⏸ 일시정지';
+    processLoop();
+  }
+}
+
+async function processLoop() {
+  const video = document.getElementById('srcVideo');
+  if (!vidPlaying || video.paused || video.ended) {
+    if (video.ended) {
+      vidPlaying = false;
+      document.getElementById('playBtn').textContent = '▶ 재생 + 실시간 제거';
+      if (isRecording) stopRecording();
+    }
+    return;
+  }
+  await segModel.send({ image: video });
+  vidRAF = requestAnimationFrame(processLoop);
+}
+
+function stopVideoPlayback() {
+  const video = document.getElementById('srcVideo');
+  if (video && vidPlaying) { video.pause(); vidPlaying = false; }
+  if (vidRAF) cancelAnimationFrame(vidRAF);
+  const btn = document.getElementById('playBtn');
+  if (btn) btn.textContent = '▶ 재생 + 실시간 제거';
+}
+
+// ══ 녹화 (배경 투명 webm 시도) ══
+function toggleRecording() {
+  if (isRecording) { stopRecording(); return; }
+  startRecording();
+}
+
+function startRecording() {
+  if (!segModel) { showToast('AI 모델을 불러오는 중입니다'); return; }
+  const canvas = document.getElementById('videoCanvas');
+  const stream = canvas.captureStream(30);
+
+  let mimeType = 'video/webm;codecs=vp9';
+  if (!MediaRecorder.isTypeSupported(mimeType)) mimeType = 'video/webm';
+
+  try {
+    mediaRecorder = new MediaRecorder(stream, { mimeType });
+  } catch (e) {
+    showToast('이 브라우저는 녹화를 지원하지 않습니다');
+    return;
+  }
+
+  recChunks = [];
+  mediaRecorder.ondataavailable = e => { if (e.data.size > 0) recChunks.push(e.data); };
+  mediaRecorder.onstop = () => {
+    const blob = new Blob(recChunks, { type: mimeType });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'cutout-' + Date.now() + '.webm';
+    a.click();
+    showToast('✓ 비디오 저장됨');
+  };
+
+  mediaRecorder.start();
+  isRecording = true;
+  document.getElementById('recBadge').classList.add('active');
+  document.getElementById('recBtn').textContent = '⏹ 녹화 중지';
+
+  // 자동으로 재생도 시작
+  if (!vidPlaying) toggleVideoPlay();
+}
+
+function stopRecording() {
+  if (mediaRecorder && mediaRecorder.state !== 'inactive') mediaRecorder.stop();
+  isRecording = false;
+  document.getElementById('recBadge').classList.remove('active');
+  document.getElementById('recBtn').textContent = '⏺ 녹화 시작';
+}
+
+// ══ 비디오 초기화 ══
+function resetVidTab() {
+  stopVideoPlayback();
+  if (isRecording) stopRecording();
+  const video = document.getElementById('srcVideo');
+  video.pause(); video.src = '';
+  document.getElementById('vidDropzone').style.display = 'block';
+  document.getElementById('videoStage').classList.remove('active');
+  document.getElementById('videoControls').style.display = 'none';
+  document.getElementById('vidFile').value = '';
+}
+
+// ══ 히스토리 렌더 ══
+function renderHistory() {
+  const grid = document.getElementById('histGrid');
+  const btn = document.getElementById('clearHistBtn');
+  if (!hist.length) {
+    grid.innerHTML = `<div class="empty" style="grid-column:1/-1"><div class="empty-ico">🕐</div><h3>히스토리 없음</h3><p>배경을 제거하고 저장하면 여기에 표시됩니다</p></div>`;
+    btn.style.display = 'none';
+    return;
+  }
+  btn.style.display = 'inline-block';
+  grid.innerHTML = hist.map(h => `
+    <div class="hist-thumb checker" onclick="downloadHistItem(${h.id})">
+      <img src="${h.imgData}"/>
+      <button class="hist-thumb-del" onclick="event.stopPropagation();deleteHistItem(${h.id})">✕</button>
+    </div>
+  `).join('');
+}
+function downloadHistItem(id) {
+  const h = hist.find(x => x.id === id); if (!h) return;
+  const a = document.createElement('a');
+  a.href = h.imgData; a.download = 'cutout-' + id + '.png'; a.click();
+}
+function deleteHistItem(id) {
+  hist = hist.filter(x => x.id !== id);
+  localStorage.setItem('cutout_hist', JSON.stringify(hist));
+  renderHistory();
+}
+function clearHistory() {
+  hist = [];
+  localStorage.removeItem('cutout_hist');
+  renderHistory();
+  showToast('✓ 히스토리 삭제됨');
+}
+</script>
+</body>
+</html>
